@@ -12,7 +12,7 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext}
 
 object DebugServerSpec extends TestSuite {
-  val DefaultTimeout = Duration(2, TimeUnit.SECONDS)
+  val DefaultTimeout = Duration(10, TimeUnit.SECONDS)
   // the server needs only one thread for delayed responses of the launch and configurationDone requests
   val executorService  = Executors.newFixedThreadPool(1)
   implicit val ec = ExecutionContext.fromExecutorService(executorService)

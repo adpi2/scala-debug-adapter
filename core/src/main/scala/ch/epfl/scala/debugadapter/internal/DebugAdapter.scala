@@ -1,6 +1,6 @@
 package ch.epfl.scala.debugadapter.internal
 
-import ch.epfl.scala.debugadapter.internal.evaluator.{Evaluator, JdiClassLoader}
+import ch.epfl.scala.debugadapter.internal.evaluator.Evaluator
 import ch.epfl.scala.debugadapter.{DebuggeeRunner, Logger}
 import com.microsoft.java.debug.core.adapter._
 import com.microsoft.java.debug.core.protocol.Types
@@ -8,7 +8,9 @@ import com.microsoft.java.debug.core.{DebugSettings, IEvaluatableBreakpoint}
 import com.sun.jdi._
 import io.reactivex.Observable
 
-import java.nio.file.Path
+import java.net.URI
+import java.nio.charset.StandardCharsets
+import java.nio.file.{Files, Path, Paths}
 import java.util
 import java.util.Collections
 import java.util.concurrent.CompletableFuture
@@ -38,60 +40,63 @@ private[debugadapter] object DebugAdapter {
     val context = new ProviderContext
     context.registerProvider(classOf[IHotCodeReplaceProvider], HotCodeReplaceProvider)
     context.registerProvider(classOf[IVirtualMachineManagerProvider], VirtualMachineManagerProvider)
-    context.registerProvider(classOf[ISourceLookUpProvider], SourceLookUpProvider(runner.classPathEntries, logger))
-    context.registerProvider(classOf[IEvaluationProvider], EvaluationProvider)
+    val sourceLookUpProvider =  SourceLookUpProvider(runner.classPathEntries, logger)
+    context.registerProvider(classOf[ISourceLookUpProvider], sourceLookUpProvider)
+    context.registerProvider(classOf[IEvaluationProvider], new EvaluationProvider(sourceLookUpProvider))
     context.registerProvider(classOf[ICompletionsProvider], CompletionsProvider)
     context
   }
 
   object CompletionsProvider extends ICompletionsProvider {
     override def codeComplete(
-        frame: StackFrame,
-        snippet: String,
-        line: Int,
-        column: Int
-    ): util.List[Types.CompletionItem] = Collections.emptyList()
+                               frame: StackFrame,
+                               snippet: String,
+                               line: Int,
+                               column: Int
+                             ): util.List[Types.CompletionItem] = Collections.emptyList()
   }
 
-  object EvaluationProvider extends IEvaluationProvider {
+  class EvaluationProvider(sourceLookUpProvider: ISourceLookUpProvider) extends IEvaluationProvider {
     override def isInEvaluation(thread: ThreadReference): Boolean = false
 
     override def evaluate(
-        expression: String,
-        thread: ThreadReference,
-        depth: Int
-    ): CompletableFuture[Value] = {
+                           expression: String,
+                           thread: ThreadReference,
+                           depth: Int
+                         ): CompletableFuture[Value] = {
       val frame = thread.frames().get(depth)
-      Evaluator.evaluate(expression, thread, frame)
+      Evaluator.evaluate(expression, thread, frame)(sourceLookUpProvider)
     }
 
     override def evaluate(
-        expression: String,
-        thisContext: ObjectReference,
-        thread: ThreadReference
-    ): CompletableFuture[Value] = ???
+                           expression: String,
+                           thisContext: ObjectReference,
+                           thread: ThreadReference
+                         ): CompletableFuture[Value] = ???
 
     override def evaluateForBreakpoint(
-        breakpoint: IEvaluatableBreakpoint,
-        thread: ThreadReference
-    ): CompletableFuture[Value] = ???
+                                        breakpoint: IEvaluatableBreakpoint,
+                                        thread: ThreadReference
+                                      ): CompletableFuture[Value] = ???
 
     override def invokeMethod(
-        thisContext: ObjectReference,
-        methodName: String,
-        methodSignature: String,
-        args: Array[Value],
-        thread: ThreadReference,
-        invokeSuper: Boolean
-    ): CompletableFuture[Value] = ???
+                               thisContext: ObjectReference,
+                               methodName: String,
+                               methodSignature: String,
+                               args: Array[Value],
+                               thread: ThreadReference,
+                               invokeSuper: Boolean
+                             ): CompletableFuture[Value] = ???
 
     override def clearState(thread: ThreadReference): Unit = {}
   }
 
   object HotCodeReplaceProvider extends IHotCodeReplaceProvider {
     override def onClassRedefined(consumer: Consumer[util.List[String]]): Unit = ()
+
     override def redefineClasses(): CompletableFuture[util.List[String]] =
       CompletableFuture.completedFuture(Collections.emptyList())
+
     override def getEventHub: Observable[HotCodeReplaceEvent] = Observable.empty()
   }
 

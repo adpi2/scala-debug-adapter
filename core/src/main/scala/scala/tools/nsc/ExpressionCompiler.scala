@@ -32,28 +32,29 @@ class ExpressionCompiler(val global: EvalGlobal, val global2: EvalGlobal, privat
     val lines = code.split("\n")
     val newCode = (lines.take(global.line - 1) ++ Seq(expression) ++ lines.drop(global.line - 1)).mkString("\n")
     val source = new BatchSourceFile(
-      "<expression>",
+      "<source>",
       newCode
     )
     compilerRun.compileSources(List(source))
     reporter.infos.foreach(println)
 
-    val expressionStr = global.expression.toString()
-    val variablesStr = global.variables.map(variable => "val " + variable.name + " = valuesByName(\"" + variable.name + "\").asInstanceOf[" + variable.tpe + "]").mkString("\n")
-    val code2 =
-      s"""class Expression {
-         |  def evaluate(names: Array[Any], values: Array[Any]) = {
-         |    val valuesByName = names.map(_.asInstanceOf[String]).zip(values).toMap
-         |    $variablesStr
-         |    $expressionStr
-         |  }
-         |}
-         |""".stripMargin
-    println(code2)
-    val source2 = new BatchSourceFile(
-      "<expression2>",
-      code2
-    )
-    compilerRun2.compileSources(List(source2))
+//    val expressionStr = global.expression.toString()
+//    val variablesStr = global.variables.map(variable => "val " + variable.name + " = valuesByName(\"" + variable.name + "\").asInstanceOf[" + variable.tpe + "]").mkString("\n")
+//    val code2 =
+//      s"""class Expression {
+//         |  def evaluate(names: Array[Any], values: Array[Any]) = {
+//         |    val valuesByName = names.map(_.asInstanceOf[String]).zip(values).toMap
+//         |    $variablesStr
+//         |    $expressionStr
+//         |  }
+//         |}
+//         |""".stripMargin
+//    println(code2)
+//    val source2 = new BatchSourceFile(
+//      "<expression>",
+//      code2
+//    )
+//    compilerRun2.compileSources(List(source2))
+//    reporter.infos.foreach(println)
   }
 }

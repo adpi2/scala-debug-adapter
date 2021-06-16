@@ -6,3 +6,7 @@ object EvaluateTest {
     println(c + (a + b))
   }
 }
+
+object Foo {
+  def bar(a: Int) = a
+}

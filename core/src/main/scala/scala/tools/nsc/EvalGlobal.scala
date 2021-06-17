@@ -30,7 +30,7 @@ private[nsc] class EvalGlobal(settings: Settings, reporter: Reporter, val line: 
       override def transform(tree: Tree): Tree = tree match {
         // TODO: DefDef?
         case tree: ValDef =>
-          if (tree.rhs.tpe.typeSymbol!= NoSymbol) {
+          if (tree.rhs.tpe.typeSymbol != NoSymbol) {
             defsByName += (tree.name -> tree)
           }
           tree
@@ -43,7 +43,7 @@ private[nsc] class EvalGlobal(settings: Settings, reporter: Reporter, val line: 
     }
   }
 
-  class GenExpr extends Transform with TypingTransformers {
+  class GenExpr extends Transform with TypingTransformers with ast.TreeDSL {
 
     import typer.typedPos
 
@@ -53,19 +53,6 @@ private[nsc] class EvalGlobal(settings: Settings, reporter: Reporter, val line: 
     override val runsRightAfter: Option[String] = Some("extract")
 
     override protected def newTransformer(unit: CompilationUnit): Transformer = new GenExprTransformer(unit)
-
-    class IdentFinder extends Traverser {
-      val identsByName: mutable.Map[Name, Ident] = mutable.Map()
-
-      override def traverse(tree: Tree): Unit = {
-        tree match {
-          case ident: Ident if ident.symbol.isVal || ident.symbol.isVar =>
-            identsByName += (ident.name -> ident)
-          case _ =>
-            traverseTrees(tree.children)
-        }
-      }
-    }
 
     class ExpressionTransformer(symbolsByName: Map[Name, Symbol]) extends Transformer {
       override def transform(tree: Tree): Tree = tree match {
@@ -97,23 +84,25 @@ private[nsc] class EvalGlobal(settings: Settings, reporter: Reporter, val line: 
           // we can be sure that `rhs0` is an instance of a `Block`
           val block0 = rhs0.asInstanceOf[Block]
 
-          // TODO: probably we don't need it
-          // find all identifiers in expression
-//          val identFinder = new IdentFinder()
-//          identFinder.traverse(expression)
+          // TODO: generate vals
+          val tp = defsByName(TermName("z")).tpt.tpe
+          val sym = NoSymbol.newTermSymbol(TermName("z"), block0.pos).setInfo(tp)
+          val tt = TypeTree().setType(tp)
+
+//          val tp2 = defsByName(TermName("y")).tpt.tpe
+//          val sym2 = NoSymbol.newTermSymbol(TermName("y"), block0.pos).setInfo(tp2)
+//          val typeTree2 = TypeTree().setType(tp2)
+//          val zMethods = new TreeMethods(Literal(Constant("hello")))
+//          val newZ = zMethods.AS(tp)
+
+          val z = ValDef(block0.stats.last.asInstanceOf[ValDef].mods, TermName("z"), tt, Literal(Constant(20))).setSymbol(sym)
 
           // find all defs in `evaluate` method
           val defFinder = new DefFinder()
           defFinder.traverse(block0)
 
           // replace symbols in the expression with those from the `evaluate` method
-          val newExpression = new ExpressionTransformer(defFinder.symbolsByName.toMap).transform(expression)
-
-          // TODO: generate vals
-          val tp: Type = defsByName(TermName("z")).tpt.tpe
-          val sym = NoSymbol.newTermSymbol(TermName("z"), block0.pos).setInfo(tp)
-          val typeTree = TypeTree().setType(tp)
-          val z = ValDef(block0.stats.last.asInstanceOf[ValDef].mods, TermName("z"), typeTree, Literal(Constant(1))).setSymbol(sym)
+          val newExpression = new ExpressionTransformer(defFinder.symbolsByName.toMap + (z.name -> z.symbol)).transform(expression)
 
           // update return type of the `evaluate` method
           val tpt = TypeTree().copyAttrs(newExpression)

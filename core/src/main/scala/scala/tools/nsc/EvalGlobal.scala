@@ -43,7 +43,7 @@ private[nsc] class EvalGlobal(settings: Settings, reporter: Reporter, val line: 
     }
   }
 
-  class GenExpr extends Transform with TypingTransformers with ast.TreeDSL {
+  class GenExpr extends Transform with TypingTransformers {
 
     import typer.typedPos
 
@@ -57,9 +57,7 @@ private[nsc] class EvalGlobal(settings: Settings, reporter: Reporter, val line: 
     class ExpressionTransformer(symbolsByName: Map[Name, Symbol]) extends Transformer {
       override def transform(tree: Tree): Tree = tree match {
         case ident: Ident if symbolsByName.contains(ident.name) =>
-          // TODO: update positions?
-          val newSymbol = symbolsByName(ident.name)
-          ident.setSymbol(newSymbol)
+          ident.setSymbol(symbolsByName(ident.name))
         case _ =>
           super.transform(tree)
       }
@@ -79,41 +77,44 @@ private[nsc] class EvalGlobal(settings: Settings, reporter: Reporter, val line: 
     }
 
     class GenExprTransformer(unit: CompilationUnit) extends TypingTransformer(unit) {
+      private var valuesByNameIdent: Ident = _
+
       override def transform(tree: Tree): Tree = tree match {
-        case DefDef(mods0, name0, tparams0, vparamss0, _, rhs0) if name0.decode == "evaluate" =>
-          // we can be sure that `rhs0` is an instance of a `Block`
-          val block0 = rhs0.asInstanceOf[Block]
+        case tree: Ident if tree.name == TermName("valuesByName") && valuesByNameIdent == null =>
+          valuesByNameIdent = tree
+          super.transform(tree)
+        case DefDef(_, name, _, _, _, _) if name == TermName("evaluate") =>
+          // firstly, transform the body of the method
+          super.transform(tree)
 
-          // TODO: generate vals
-          val tp = defsByName(TermName("z")).tpt.tpe
-          val sym = NoSymbol.newTermSymbol(TermName("z"), block0.pos).setInfo(tp)
-          val tt = TypeTree().setType(tp)
+          deriveDefDef(tree) { rhs =>
+            // we can be sure that `rhs` is an instance of a `Block`
+            val block = rhs.asInstanceOf[Block]
 
-//          val tp2 = defsByName(TermName("y")).tpt.tpe
-//          val sym2 = NoSymbol.newTermSymbol(TermName("y"), block0.pos).setInfo(tp2)
-//          val typeTree2 = TypeTree().setType(tp2)
-//          val zMethods = new TreeMethods(Literal(Constant("hello")))
-//          val newZ = zMethods.AS(tp)
+            // find all defs in the body of the `evaluate` method
+            val defFinder = new DefFinder()
+            defFinder.traverse(block)
 
-          val z = ValDef(block0.stats.last.asInstanceOf[ValDef].mods, TermName("z"), tt, Literal(Constant(20))).setSymbol(sym)
+//            val app = typedPos(tree.pos)(Apply(valuesByNameIdent, List(Literal(Constant("z")))))
+            val app = Apply(valuesByNameIdent, List(Literal(Constant("z"))))
+            val clazz = rootMirror.getRequiredClass("java.lang.String")
+            val tpe = defsByName(TermName("z")).tpt.tpe
+            val casted = gen.mkCast(app, clazz.tpe)
+            val sym = NoSymbol.newTermSymbol(TermName("z"), tree.pos).setInfo(tpe)
+            val tt = TypeTree().setType(tpe)
+//            val z = ValDef(Modifiers(), TermName("z"), tt, casted).setSymbol(sym)
+            val z = ValDef(Modifiers(), TermName("z"), tt, casted).setSymbol(sym)
 
-          // find all defs in `evaluate` method
-          val defFinder = new DefFinder()
-          defFinder.traverse(block0)
+            val symbolsByName = defFinder.symbolsByName.toMap + (z.name -> z.symbol)
 
-          // replace symbols in the expression with those from the `evaluate` method
-          val newExpression = new ExpressionTransformer(defFinder.symbolsByName.toMap + (z.name -> z.symbol)).transform(expression)
+            // replace symbols in the expression with those from the `evaluate` method
+            val newExpression = new ExpressionTransformer(symbolsByName).transform(expression)
 
-          // update return type of the `evaluate` method
-          val tpt = TypeTree().copyAttrs(newExpression)
-          tree.symbol.asInstanceOf[MethodSymbol].modifyInfo(info => {
-            val methodType = info.asInstanceOf[MethodType]
-            methodType.copy(resultType = tpt.tpe)
-          })
+            val newRhs = new Block(block.stats :+ z, newExpression)
 
-          // create a new body for the `evaluate` method
-          val rhs = typedPos(rhs0.pos)(new Block(block0.stats :+ z, newExpression))
-          DefDef(mods0, name0, tparams0, vparamss0, tpt, rhs).copyAttrs(tree)
+            val tpt = TypeTree().copyAttrs(newExpression)
+            typedPos(tree.pos)(newRhs).setType(tpt.tpe)
+          }
         case _ =>
           super.transform(tree)
       }

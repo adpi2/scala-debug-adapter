@@ -12,20 +12,16 @@ object ExpressionCompiler {
     settings.outputDirs.setSingleOutput(dir.toString)
     val reporter = new StoreReporter
     val global = new EvalGlobal(settings, reporter, line)
-    val global2 = new EvalGlobal(settings, reporter, line)
-    new ExpressionCompiler(global, global2, reporter, dir)
+    new ExpressionCompiler(global, reporter, dir)
   }
 }
 
-class ExpressionCompiler(val global: EvalGlobal, val global2: EvalGlobal, private val reporter: StoreReporter, val dir: Path) {
+class ExpressionCompiler(val global: EvalGlobal, val reporter: StoreReporter, val dir: Path) {
   private val compilerRun = new global.Run() {
     override protected def stopPhase(name: String): Boolean = {
       println(s"[phase] $name")
-        super.stopPhase(name)
+      super.stopPhase(name)
     }
-  }
-
-  private val compilerRun2 = new global2.Run() {
   }
 
   def compile(code: String, expression: String): Unit = {
@@ -37,24 +33,5 @@ class ExpressionCompiler(val global: EvalGlobal, val global2: EvalGlobal, privat
     )
     compilerRun.compileSources(List(source))
     reporter.infos.foreach(println)
-
-//    val expressionStr = global.expression.toString()
-//    val variablesStr = global.variables.map(variable => "val " + variable.name + " = valuesByName(\"" + variable.name + "\").asInstanceOf[" + variable.tpe + "]").mkString("\n")
-//    val code2 =
-//      s"""class Expression {
-//         |  def evaluate(names: Array[Any], values: Array[Any]) = {
-//         |    val valuesByName = names.map(_.asInstanceOf[String]).zip(values).toMap
-//         |    $variablesStr
-//         |    $expressionStr
-//         |  }
-//         |}
-//         |""".stripMargin
-//    println(code2)
-//    val source2 = new BatchSourceFile(
-//      "<expression>",
-//      code2
-//    )
-//    compilerRun2.compileSources(List(source2))
-//    reporter.infos.foreach(println)
   }
 }

@@ -16,14 +16,6 @@ object ExpressionCompilerTest extends TestSuite {
           |    println("hello")
           |  }
           |}
-          |
-          |class Expression {
-          |  def evaluate(names: Array[Any], values: Array[Any]) = {
-          |    val valuesByName = names.map(_.asInstanceOf[String]).zip(values).toMap
-          |    valuesByName
-          |    ()
-          |  }
-          |}
           |""".stripMargin
 
       // it reports an error but works anyway

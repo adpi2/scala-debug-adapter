@@ -1,12 +1,8 @@
 object EvaluateTest {
   def main(args: Array[String]): Unit = {
-    val a: Int = 1
-    val b: Int = 2
-    val c: String = "1 + 2 = "
-    println(c + (a + b))
+    val a = "a"
+    val b = "b"
+    val c = "c"
+    println("Hello")
   }
-}
-
-object Foo {
-  def bar(a: Int) = a
 }

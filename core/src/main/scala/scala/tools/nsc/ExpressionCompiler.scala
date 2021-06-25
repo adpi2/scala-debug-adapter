@@ -17,6 +17,17 @@ object ExpressionCompiler {
 }
 
 class ExpressionCompiler(val global: EvalGlobal, val reporter: StoreReporter, val dir: Path) {
+  private val expressionSource =
+    """
+      |class Expression {
+      |  def evaluate(names: Array[Any], values: Array[Any]) = {
+      |    val valuesByName = names.map(_.asInstanceOf[String]).zip(values).toMap
+      |    valuesByName
+      |    ()
+      |  }
+      |}
+      |""".stripMargin
+
   private val compilerRun = new global.Run() {
     override protected def stopPhase(name: String): Boolean = {
       println(s"[phase] $name")
@@ -25,7 +36,8 @@ class ExpressionCompiler(val global: EvalGlobal, val reporter: StoreReporter, va
   }
 
   def compile(code: String, expression: String): Unit = {
-    val lines = code.split("\n")
+    val codeWithExpression = code + "\n" + expressionSource
+    val lines = codeWithExpression.split("\n")
     val newCode = (lines.take(global.line - 1) ++ Seq(expression) ++ lines.drop(global.line - 1)).mkString("\n")
     val source = new BatchSourceFile(
       "<source>",

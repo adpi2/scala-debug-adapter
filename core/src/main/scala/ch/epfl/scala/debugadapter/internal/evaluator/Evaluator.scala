@@ -1,6 +1,5 @@
 package ch.epfl.scala.debugadapter.internal.evaluator
 
-import ch.epfl.scala.debugadapter.internal.DebugAdapter.SourceLookUpProvider
 import com.microsoft.java.debug.core.adapter.ISourceLookUpProvider
 import com.sun.jdi._
 
@@ -57,7 +56,20 @@ object Evaluator {
   }
 
   private def boxIfNeeded(value: Value, classLoader: JdiClassLoader, thread: ThreadReference): Option[Value] = value match {
-    case value: IntegerValue => JdiPrimitive.boxed(value.value(), classLoader, thread).map(_.reference)
+    case value: BooleanValue =>
+      JdiPrimitive.boxed(value.value(), classLoader, thread).map(_.reference)
+    case value: CharValue =>
+      JdiPrimitive.boxed(value.value(), classLoader, thread).map(_.reference)
+    case value: DoubleValue =>
+      JdiPrimitive.boxed(value.value(), classLoader, thread).map(_.reference)
+    case value: FloatValue =>
+      JdiPrimitive.boxed(value.value(), classLoader, thread).map(_.reference)
+    case value: IntegerValue =>
+      JdiPrimitive.boxed(value.value(), classLoader, thread).map(_.reference)
+    case value: LongValue =>
+      JdiPrimitive.boxed(value.value(), classLoader, thread).map(_.reference)
+    case value: ShortValue =>
+      JdiPrimitive.boxed(value.value(), classLoader, thread).map(_.reference)
     case value => Some(value)
   }
 }

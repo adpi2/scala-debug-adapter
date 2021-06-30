@@ -99,17 +99,17 @@ private[nsc] class EvalGlobal(settings: Settings, reporter: Reporter, val line: 
             val defFinder = new DefFinder()
             defFinder.traverse(block)
 
-            // replace original valDefs with synthesized defs with values that will be sent via JDI
+            // replace original valDefs with synthesized valDefs with values that will be sent via JDI
             val newValDefsByName = valDefsByName.map { case (name, valDef) =>
-              val app = Apply(valuesByNameIdent, List(Literal(Constant(name.decode))))
-              // TODO: use original class instead of hardcoded `java.lang.String`
-              val clazz = rootMirror.getRequiredClass("java.lang.String")
-              val casted = gen.mkCast(app, clazz.tpe)
-              val tpe = valDefsByName(TermName(name.decode)).tpt.tpe
-              val sym = NoSymbol.newTermSymbol(TermName(name.decode), tree.pos).setInfo(tpe)
-              val tt = TypeTree().setType(tpe)
-              val newValDef = ValDef(Modifiers(), TermName(name.decode), tt, casted).setSymbol(sym)
-              name -> newValDef
+              valDef.rhs match {
+                case literal: Literal =>
+                  newValDef(name, literal, tree.pos)
+                case _ =>
+                  val app = Apply(valuesByNameIdent, List(Literal(Constant(name.decode))))
+                  val clazz = valDef.tpt.symbol.asInstanceOf[ClassSymbol]
+                  val casted: gen.global.Tree = gen.mkCast(app, clazz.tpe)
+                  newValDef(name, casted, tree.pos)
+              }
             }
 
             // merge all symbols
@@ -135,6 +135,14 @@ private[nsc] class EvalGlobal(settings: Settings, reporter: Reporter, val line: 
           derived.setType(tpt.tpe)
         case _ =>
           super.transform(tree)
+      }
+
+      private def newValDef(name: TermName, value: Tree, pos: Position) = {
+        val tpe = valDefsByName(TermName(name.decode)).tpt.tpe
+        val sym = NoSymbol.newTermSymbol(TermName(name.decode), pos).setInfo(tpe)
+        val tt = TypeTree().setType(tpe)
+        val newValDef = ValDef(Modifiers(), TermName(name.decode), tt, value).setSymbol(sym)
+        name -> newValDef
       }
     }
   }

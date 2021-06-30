@@ -47,21 +47,21 @@ private[debugadapter] object DebugAdapter {
 
   object CompletionsProvider extends ICompletionsProvider {
     override def codeComplete(
-                               frame: StackFrame,
-                               snippet: String,
-                               line: Int,
-                               column: Int
-                             ): util.List[Types.CompletionItem] = Collections.emptyList()
+      frame: StackFrame,
+      snippet: String,
+      line: Int,
+      column: Int
+    ): util.List[Types.CompletionItem] = Collections.emptyList()
   }
 
   class EvaluationProvider(sourceLookUpProvider: ISourceLookUpProvider) extends IEvaluationProvider {
     override def isInEvaluation(thread: ThreadReference): Boolean = false
 
     override def evaluate(
-                           expression: String,
-                           thread: ThreadReference,
-                           depth: Int
-                         ): CompletableFuture[Value] = {
+      expression: String,
+      thread: ThreadReference,
+      depth: Int
+    ): CompletableFuture[Value] = {
       val frame = thread.frames().get(depth)
       Evaluator.evaluate(expression, thread, frame)(sourceLookUpProvider)
     }

@@ -12,7 +12,7 @@ inThisBuild(
     scalaVersion := Dependencies.scala212,
     version ~= { dynVer =>
       if (isCI()) dynVer
-      else "1.2.0-SNAPSHOT" // only for local publishing
+      else "2.0.0-SNAPSHOT" // only for local publishing
     },
     // resolvers += Resolver.mavenLocal
   )
@@ -35,6 +35,7 @@ lazy val core = project
       Dependencies.asm,
       Dependencies.asmUtil,
       Dependencies.javaDebug,
+      Dependencies.scalaCompiler,
       Dependencies.utest % Test,
       Dependencies.sbtIo % Test,
       Dependencies.coursier % Test

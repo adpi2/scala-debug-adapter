@@ -36,10 +36,11 @@ private[debugadapter] object DebugAdapter {
   def context(runner: DebuggeeRunner, logger: Logger): IProviderContext = {
     val context = new ProviderContext
     val sourceLookUpProvider = SourceLookUpProvider(runner.classPathEntries ++ runner.javaRuntime)
+    val evaluator = new Evaluator(logger)
     context.registerProvider(classOf[IHotCodeReplaceProvider], HotCodeReplaceProvider)
     context.registerProvider(classOf[IVirtualMachineManagerProvider], VirtualMachineManagerProvider)
     context.registerProvider(classOf[ISourceLookUpProvider], sourceLookUpProvider)
-    context.registerProvider(classOf[IEvaluationProvider], new EvaluationProvider(sourceLookUpProvider))
+    context.registerProvider(classOf[IEvaluationProvider], new EvaluationProvider(sourceLookUpProvider, evaluator))
     context.registerProvider(classOf[ICompletionsProvider], CompletionsProvider)
     context
   }
@@ -53,7 +54,7 @@ private[debugadapter] object DebugAdapter {
     ): util.List[Types.CompletionItem] = Collections.emptyList()
   }
 
-  class EvaluationProvider(sourceLookUpProvider: ISourceLookUpProvider) extends IEvaluationProvider {
+  class EvaluationProvider(sourceLookUpProvider: ISourceLookUpProvider, evaluator: Evaluator) extends IEvaluationProvider {
     override def isInEvaluation(thread: ThreadReference): Boolean = false
 
     override def evaluate(
@@ -62,7 +63,7 @@ private[debugadapter] object DebugAdapter {
       depth: Int
     ): CompletableFuture[Value] = {
       val frame = thread.frames().get(depth)
-      Evaluator.evaluate(expression, thread, frame)(sourceLookUpProvider)
+      evaluator.evaluate(expression, thread, frame)(sourceLookUpProvider)
     }
 
     override def evaluate(
@@ -84,7 +85,7 @@ private[debugadapter] object DebugAdapter {
       thread: ThreadReference,
       invokeSuper: Boolean
     ): CompletableFuture[Value] =
-      Evaluator.invokeMethod(thisContext, methodName, methodSignature, args, thread, invokeSuper)
+      evaluator.invokeMethod(thisContext, methodName, methodSignature, args, thread, invokeSuper)
 
     override def clearState(thread: ThreadReference): Unit = {}
   }

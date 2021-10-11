@@ -27,7 +27,8 @@ class JdiClassObject(
 
   def invokeStatic(
       methodName: String,
-      args: List[ObjectReference]
+      args: List[ObjectReference],
+      singleThreaded: Boolean = true
   ): Safe[Value] = {
     val parameterTypes = args.map(_.referenceType.classObject())
     for {
@@ -38,7 +39,7 @@ class JdiClassObject(
       )
         .map(_.asInstanceOf[ObjectReference])
         .map(new JdiObject(_, thread))
-      result <- method.invoke("invoke", List(null) ++ args)
+      result <- method.invoke("invoke", List(null) ++ args, singleThreaded)
     } yield result
   }
 }

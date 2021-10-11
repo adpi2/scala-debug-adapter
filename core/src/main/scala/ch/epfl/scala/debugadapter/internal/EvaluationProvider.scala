@@ -97,7 +97,8 @@ private[internal] class EvaluationProvider(
       val invocation = obj.invoke(
         methodName,
         methodSignature,
-        if (args == null) List() else args.toList
+        args.toList,
+        singleThreaded = false
       )
       invocation.getResult match {
         case Success(value) =>

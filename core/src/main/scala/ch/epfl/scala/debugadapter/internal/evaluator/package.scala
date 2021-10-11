@@ -22,14 +22,15 @@ package object evaluator {
       objRef: ObjectReference,
       method: Method,
       args: List[Value],
-      thread: ThreadReference
+      thread: ThreadReference,
+      singleThreaded: Boolean = true
   ): Safe[Value] = {
     Safe(
       objRef.invokeMethod(
         thread,
         method,
         args.asJava,
-        ObjectReference.INVOKE_SINGLE_THREADED
+        if (singleThreaded) ObjectReference.INVOKE_SINGLE_THREADED else 0
       )
     ).recoverWith { case t: InvocationException =>
       extractMessage(t)(thread).map(message =>

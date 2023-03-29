@@ -24,7 +24,7 @@ private[debugadapter] object DebugAdapter {
   DebugSettings.getCurrent.showStaticVariables = true
 
   def context(debuggee: Debuggee, tools: DebugTools, logger: Logger, config: DebugConfig): IProviderContext = {
-    TimeUtils.logTime(logger, "Configured debugger context") {
+    TimeUtils.logTime(logger, "debugger context") {
       val context = new ProviderContext
       val classEntries = debuggee.classEntries
       val distinctEntries = classEntries
@@ -34,7 +34,9 @@ private[debugadapter] object DebugAdapter {
           group.head
         }
         .toSeq
-      val sourceLookUpProvider = SourceLookUpProvider(distinctEntries, logger)
+      val sourceLookUpProvider = TimeUtils.logTime(logger, "source lookup") {
+        SourceLookUpProvider(distinctEntries, logger)
+      }
 
       context.registerProvider(classOf[IHotCodeReplaceProvider], HotCodeReplaceProvider)
       context.registerProvider(classOf[IVirtualMachineManagerProvider], VirtualMachineManagerProvider)

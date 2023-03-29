@@ -78,15 +78,24 @@ private[debugadapter] final class SourceLookUpProvider(
 
 private[debugadapter] object SourceLookUpProvider {
   def apply(entries: Seq[ClassEntry], logger: Logger): SourceLookUpProvider = {
+    logger.debug(entries.map(_.name).mkString("\n"))
     val parrallelEntries = ParVector(entries*)
     val sourceFilesByEntry = parrallelEntries
       .flatMap(_.sourceEntries)
       .distinct
-      .map(entry => entry -> SourceEntryLookUp.getAllSourceFiles(entry, logger))
+      .map { entry =>
+        TimeUtils.logTime(logger, s"getAllSourceFiles of ${entry.name}") {
+          val res = SourceEntryLookUp.getAllSourceFiles(entry, logger)
+          logger.debug(s"Found ${res.size} source files in ${entry.name}")
+          entry -> res
+        }
+      }
       .toMap
-    val allLookUps = parrallelEntries
-      .map(entry => ClassEntryLookUp(entry, entry.sourceEntries.flatMap(sourceFilesByEntry.apply), logger))
-      .seq
+    val allLookUps = parrallelEntries.map { entry =>
+      TimeUtils.logTime(logger, s"ClassEntryLookUp of ${entry.name}") {
+        ClassEntryLookUp(entry, entry.sourceEntries.flatMap(sourceFilesByEntry.apply), logger)
+      }
+    }.seq
     val sourceUriToClassPathEntry = allLookUps
       .flatMap(lookup => lookup.sources.map(uri => (uri, lookup)))
       .toMap

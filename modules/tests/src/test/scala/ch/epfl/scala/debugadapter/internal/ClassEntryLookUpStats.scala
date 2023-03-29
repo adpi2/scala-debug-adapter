@@ -5,7 +5,7 @@ import coursier.jvm.JvmCache
 import ch.epfl.scala.debugadapter.testfmk.TestingResolver
 import ch.epfl.scala.debugadapter.JavaRuntime
 import ch.epfl.scala.debugadapter.ClassEntry
-import ch.epfl.scala.debugadapter.testfmk.NoopLogger
+import ch.epfl.scala.debugadapter.testfmk.PrintLogger
 import munit.FunSuite
 import scala.concurrent.duration.*
 import ch.epfl.scala.debugadapter.Library
@@ -204,7 +204,7 @@ class ClassEntryLookUpStats extends FunSuite {
       orphanAssertion: Int => Unit
   ): Unit = {
     val (duration, lookup) =
-      TimeUtils.timed(ClassEntryLookUp(entry, NoopLogger))
+      TimeUtils.timed(ClassEntryLookUp(entry, PrintLogger))
     val classCount = lookup.fullyQualifiedNames.size
     val orphanClassCount = lookup.orphanClassFiles.size
     println(s"$name:")

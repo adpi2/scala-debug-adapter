@@ -11,6 +11,7 @@ private[debugadapter] object ScalaExtension {
       case Success(value) => Some(value)
       case Failure(e) =>
         logger.warn(s"$message: ${e.getClass.getSimpleName} ${e.getMessage}")
+        logger.trace(e)
         None
     }
   }

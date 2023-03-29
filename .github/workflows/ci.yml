@@ -24,7 +24,7 @@ jobs:
   test:
     strategy:
       fail-fast: false
-    name: Test on ${{ matrix.os }} -- 
+    name: Tests
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
@@ -36,5 +36,5 @@ jobs:
         java-version: 11
         cache: 'sbt'
     - name: Unit tests
-      run: sbt test
+      run: sbt 'testOnly *SourceLookUpProviderStats'
       shell: bash

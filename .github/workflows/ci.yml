@@ -10,7 +10,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: ./bin/scalafmt --test
-  test:
+  test-java-setup:
     strategy:
       fail-fast: false
     name: Tests
@@ -24,6 +24,22 @@ jobs:
         distribution: 'temurin'
         java-version: 11
         cache: 'sbt'
+    - name: Unit tests
+      run: sbt 'testOnly *SourceLookUpProviderStats'
+      shell: bash
+  test-cs-setup:
+    strategy:
+      fail-fast: false
+    name: Tests using Coursier
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+      with:
+        submodules: true
+    - uses: coursier/setup-action@v1.3.0
+      with:
+        jvm: 'temurin:1.11.0.18'
+        apps: sbt
     - name: Unit tests
       run: sbt 'testOnly *SourceLookUpProviderStats'
       shell: bash

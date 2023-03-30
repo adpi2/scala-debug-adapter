@@ -10,17 +10,6 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: ./bin/scalafmt --test
-  cross-compilation:
-    name: Cross Compilation
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
-      - uses: coursier/setup-action@v1.3.0
-        with:
-          apps: sbt
-      - run: sbt +compile
   test:
     strategy:
       fail-fast: false

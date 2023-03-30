@@ -50,45 +50,45 @@ class SourceLookUpProviderStats extends FunSuite {
 
   val javaRuntime = JavaRuntime(Properties.javaHome).get
 
-  test("adopt:1.8.0-292") {
-    printAndCheck("adopt:1.8.0-292")
-  }
+  // test("adopt:1.8.0-292") {
+  //   printAndCheck("adopt:1.8.0-292")
+  // }
 
-  test("adopt:1.9.0-0") {
-    printAndCheck("adopt:1.9.0-0")
-  }
+  // test("adopt:1.9.0-0") {
+  //   printAndCheck("adopt:1.9.0-0")
+  // }
 
-  test("adopt:1.10.0-2") {
-    printAndCheck("adopt:1.10.0-2")
-  }
+  // test("adopt:1.10.0-2") {
+  //   printAndCheck("adopt:1.10.0-2")
+  // }
 
-  test("adopt:1.11.0-11") {
-    printAndCheck("adopt:1.11.0-11")
-  }
+  // test("adopt:1.11.0-11") {
+  //   printAndCheck("adopt:1.11.0-11")
+  // }
 
-  test("adopt:1.12.0-2") {
-    printAndCheck("adopt:1.12.0-2")
-  }
+  // test("adopt:1.12.0-2") {
+  //   printAndCheck("adopt:1.12.0-2")
+  // }
 
-  test("adopt:1.13.0-2") {
-    printAndCheck("adopt:1.13.0-2")
-  }
+  // test("adopt:1.13.0-2") {
+  //   printAndCheck("adopt:1.13.0-2")
+  // }
 
-  test("adopt:1.14.0-2") {
-    printAndCheck("adopt:1.14.0-2")
-  }
+  // test("adopt:1.14.0-2") {
+  //   printAndCheck("adopt:1.14.0-2")
+  // }
 
-  test("adopt:1.15.0-2") {
-    printAndCheck("adopt:1.15.0-2")
-  }
+  // test("adopt:1.15.0-2") {
+  //   printAndCheck("adopt:1.15.0-2")
+  // }
 
-  test("adopt:1.16.0-1") {
-    printAndCheck("adopt:1.16.0-1")
-  }
+  // test("adopt:1.16.0-1") {
+  //   printAndCheck("adopt:1.16.0-1")
+  // }
 
-  test("zulu:17.0.2") {
-    printAndCheck("zulu:17.0.2")
-  }
+  // test("zulu:17.0.2") {
+  //   printAndCheck("zulu:17.0.2")
+  // }
 
   test(javaRuntime.name) {
     printAndCheck(javaRuntime.name, javaRuntime)

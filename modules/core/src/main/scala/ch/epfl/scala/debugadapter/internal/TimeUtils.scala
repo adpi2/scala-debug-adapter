@@ -12,6 +12,13 @@ private[debugadapter] object TimeUtils {
     result
   }
 
+  def logTime[T](msg: String)(f: => T): T = {
+    println(s"[Debug] Starting $msg")
+    val (duration, result) = timed(f)
+    println(s"[Debug]$msg in ${prettyPrint(duration)}")
+    result
+  }
+
   def timed[T](f: => T): (Duration, T) = {
     val start = System.currentTimeMillis
     val result = f

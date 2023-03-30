@@ -48,14 +48,14 @@ private object SourceEntryLookUp {
       val sourceMatcher = fileSystem.getPathMatcher("glob:**.{scala,java}")
       Files
         .walk(root: Path)
-        // .filter(sourceMatcher.matches)
-        .filter { p =>
-          val fileName = p.getFileName
-          (p.getFileName != null) && {
-            val fileNameStr = fileName.toString
-            fileNameStr.endsWith(".scala") || fileNameStr.endsWith(".java")
-          }
-        }
+        .filter(sourceMatcher.matches)
+        // .filter { p =>
+        //   val fileName = p.getFileName
+        //   (p.getFileName != null) && {
+        //     val fileNameStr = fileName.toString
+        //     fileNameStr.endsWith(".scala") || fileNameStr.endsWith(".java")
+        //   }
+        // }
         .iterator
         .asScala
         .map { path =>

@@ -1,6 +1,7 @@
 package ch.epfl.scala.debugadapter
 
 import java.nio.file.Path
+import io.reactivex.Observable
 
 trait Debuggee {
   def name: String
@@ -10,6 +11,7 @@ trait Debuggee {
   def libraries: Seq[Library]
   def unmanagedEntries: Seq[UnmanagedEntry]
   def javaRuntime: Option[JavaRuntime]
+  def classesToUpdate: Observable[Seq[String]] = Observable.empty()
 
   def managedEntries: Seq[ManagedEntry] = modules ++ libraries
   def classPathEntries: Seq[ClassPathEntry] = managedEntries ++ unmanagedEntries

@@ -8,12 +8,14 @@ import com.microsoft.java.debug.core.DebugSettings
 import com.microsoft.java.debug.core.adapter.{StepFilterProvider => _, _}
 import com.microsoft.java.debug.core.protocol.Types
 import com.sun.jdi._
-import io.reactivex.Observable
+import io.reactivex.subjects.PublishSubject;
 
 import java.util
 import java.util.Collections
-import java.util.concurrent.CompletableFuture
-import java.util.function.Consumer
+import io.reactivex.Observable
+import io.reactivex.Observer
+import io.reactivex.subjects.Subject
+import scala.collection.immutable
 
 private[debugadapter] object DebugAdapter {
 
@@ -34,19 +36,22 @@ private[debugadapter] object DebugAdapter {
           group.head
         }
         .toSeq
-      val sourceLookUpProvider = SourceLookUpProvider(distinctEntries, logger)
+      val sourceLookUp = SourceLookUpProvider(distinctEntries, logger)
 
-      context.registerProvider(classOf[IHotCodeReplaceProvider], HotCodeReplaceProvider)
+      context.registerProvider(
+        classOf[IHotCodeReplaceProvider],
+        HotCodeReplaceProvider(sourceLookUp, debuggee.classesToUpdate, logger, config.testMode)
+      )
       context.registerProvider(classOf[IVirtualMachineManagerProvider], VirtualMachineManagerProvider)
-      context.registerProvider(classOf[ISourceLookUpProvider], sourceLookUpProvider)
+      context.registerProvider(classOf[ISourceLookUpProvider], sourceLookUp)
       context.registerProvider(
         classOf[IEvaluationProvider],
-        EvaluationProvider(debuggee, tools, sourceLookUpProvider, logger, config)
+        EvaluationProvider(debuggee, tools, sourceLookUp, logger, config)
       )
       context.registerProvider(classOf[ICompletionsProvider], CompletionsProvider)
       context.registerProvider(
         classOf[IStepFilterProvider],
-        StepFilterProvider(debuggee, tools, sourceLookUpProvider, logger, config.testMode)
+        StepFilterProvider(debuggee, tools, sourceLookUp, logger, config.testMode)
       )
       context
     }
@@ -59,17 +64,6 @@ private[debugadapter] object DebugAdapter {
         line: Int,
         column: Int
     ): util.List[Types.CompletionItem] = Collections.emptyList()
-  }
-
-  object HotCodeReplaceProvider extends IHotCodeReplaceProvider {
-    override def onClassRedefined(consumer: Consumer[util.List[String]]): Unit =
-      ()
-
-    override def redefineClasses(): CompletableFuture[util.List[String]] =
-      CompletableFuture.completedFuture(Collections.emptyList())
-
-    override def getEventHub: Observable[HotCodeReplaceEvent] =
-      Observable.empty()
   }
 
   object VirtualMachineManagerProvider extends IVirtualMachineManagerProvider {
